@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Snake – Made by Arafat Khan</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3e9ff;--board:#e4d3fb;--ink:#2b1b52;--snake:#5b2fc9;--head:#3a1a94;--food:#ff5a7a;--btn:#2b1b52;--btnink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1b3a;--board:#2a2757;--ink:#f1ecff;--snake:#ffd166;--head:#fff1c2;--food:#ff5a7a;--btn:#f1ecff;--btnink:#1d1b3a}}
+:root[data-theme="dark"]{--bg:#1d1b3a;--board:#2a2757;--ink:#f1ecff;--snake:#ffd166;--head:#fff1c2;--food:#ff5a7a;--btn:#f1ecff;--btnink:#1d1b3a}
+html,body{height:100%;margin:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);font-family:'Fredoka',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;touch-action:none;user-select:none;-webkit-user-select:none}
+.bar{display:flex;justify-content:space-between;align-items:baseline;width:min(92vw,420px)}
+h1{font-size:30px;margin:0;font-weight:700}
+.sc{font-size:18px;font-weight:500}
+.sc b{font-size:24px}
+.wrap{position:relative;width:min(92vw,420px)}
+canvas{width:100%;aspect-ratio:1;display:block;background:var(--board);border-radius:18px}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(243,233,255,.88);border-radius:18px;text-align:center;padding:16px}
+@media (prefers-color-scheme:dark){.ov{background:rgba(29,27,58,.88)}}
+.ov h2{margin:0;font-size:28px}
+.ov p{margin:0;font-size:16px}
+.hide{display:none}
+.credit{margin:0;font-size:16px;font-weight:500;opacity:.8}
+button{font-family:inherit;font-weight:700;font-size:18px;border:0;border-radius:14px;background:var(--btn);color:var(--btnink);padding:12px 26px;cursor:pointer}
+button:focus-visible{outline:3px solid var(--food);outline-offset:3px}
+.pad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(2,56px);gap:8px}
+.pad button{padding:0;font-size:24px}
+.pad .u{grid-column:2}.pad .l{grid-row:2;grid-column:1}.pad .d{grid-row:2;grid-column:2}.pad .r{grid-row:2;grid-column:3}
+@media (hover:hover) and (pointer:fine){.pad{display:none}}
+</style>
+</head>
+<body>
+<div class="bar"><h1>Snake</h1><div class="sc">Score <b id="s">0</b> &nbsp; Best <b id="b">0</b></div></div>
+<div class="wrap">
+  <canvas id="c" width="400" height="400" aria-label="Snake game board"></canvas>
+  <div class="ov" id="ov">
+    <h2 id="t">Snake khel shuru karo</h2>
+    <p id="m">Swipe ya arrow keys se chalao. Phal khao, deewar aur khud se bacho.</p>
+    <button id="go">Start game</button>
+  </div>
+</div>
+<div class="pad" aria-label="Controls">
+  <button class="u" data-d="u" aria-label="Up">&#9650;</button>
+  <button class="l" data-d="l" aria-label="Left">&#9664;</button>
+  <button class="d" data-d="d" aria-label="Down">&#9660;</button>
+  <button class="r" data-d="r" aria-label="Right">&#9654;</button>
+</div>
+<p class="credit">Made by Arafat Khan</p>
+<script>
+(function(){
+var N=20,C=20,cv=document.getElementById('c'),x=cv.getContext('2d');
+var $=function(i){return document.getElementById(i)};
+var sn,dir,nd,food,score,best=0,timer,running=false;
+try{best=+localStorage.getItem('snake-best')||0}catch(e){}
+$('b').textContent=best;
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function rr(a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()}
+function place(){do{food={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}while(sn.some(function(p){return p.x===food.x&&p.y===food.y}))}
+function start(){sn=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];dir=nd={x:1,y:0};score=0;$('s').textContent=0;place();running=true;$('ov').classList.add('hide');draw();clearTimeout(timer);timer=setTimeout(tick,150)}
+function over(){running=false;if(score>best){best=score;$('b').textContent=best;try{localStorage.setItem('snake-best',best)}catch(e){}}
+$('t').textContent='Game over';$('m').textContent='Score: '+score+'. Dobara try karo!';$('go').textContent='Play again';$('ov').classList.remove('hide')}
+function tick(){
+ if(!running)return;
+ dir=nd;var h={x:sn[0].x+dir.x,y:sn[0].y+dir.y};
+ if(h.x<0||h.y<0||h.x>=N||h.y>=N||sn.some(function(p){return p.x===h.x&&p.y===h.y})){draw();return over()}
+ sn.unshift(h);
+ if(h.x===food.x&&h.y===food.y){score++;$('s').textContent=score;place()}else sn.pop();
+ draw();timer=setTimeout(tick,Math.max(65,150-score*4));
+}
+function draw(){
+ x.clearRect(0,0,400,400);
+ x.fillStyle=css('--food');x.beginPath();x.arc(food.x*C+C/2,food.y*C+C/2,C/2-3,0,7);x.fill();
+ sn.forEach(function(p,i){x.fillStyle=i?css('--snake'):css('--head');rr(p.x*C+1,p.y*C+1,C-2,C-2,i?6:9);x.fill()});
+}
+function turn(d){
+ var m={u:{x:0,y:-1},d:{x:0,y:1},l:{x:-1,y:0},r:{x:1,y:0}}[d];
+ if(m&&!(m.x===-dir.x&&m.y===-dir.y))nd=m;
+}
+document.addEventListener('keydown',function(e){
+ var k={ArrowUp:'u',w:'u',ArrowDown:'d',s:'d',ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r'}[e.key];
+ if(k){e.preventDefault();if(running)turn(k)}
+ else if((e.key===' '||e.key==='Enter')&&!running&&document.activeElement!==$('go')){start()}
+});
+document.querySelectorAll('.pad button').forEach(function(b){b.addEventListener('pointerdown',function(e){e.preventDefault();if(running)turn(b.dataset.d)})});
+var sx,sy;
+document.body.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+document.body.addEventListener('touchmove',function(e){
+ if(sx==null||!running)return;
+ var dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy;
+ if(Math.abs(dx)>24||Math.abs(dy)>24){turn(Math.abs(dx)>Math.abs(dy)?(dx>0?'r':'l'):(dy>0?'d':'u'));sx=e.touches[0].clientX;sy=e.touches[0].clientY}
+},{passive:true});
+$('go').addEventListener('click',start);
+sn=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];dir=nd={x:1,y:0};food={x:14,y:10};draw();
+})();
+</script>
+</body>
+</html>
